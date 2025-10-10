@@ -31,7 +31,12 @@ yarn-error.log*
 .pnpm-debug.log*
 
 .env*
+<<<<<<< HEAD
 .travel-gemini-key.json
+=======
+
+echo "travel-gemini-key.json" >> .gitignore
+>>>>>>> aa8b5b8 (Remove secret file from Git history)
 
 # vercel
 .vercel
