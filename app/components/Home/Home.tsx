@@ -1,0 +1,17 @@
+import { Search } from "lucide-react";
+import BackgroundImage from "./Background";
+import Searchtrip from "./Searchtrip";
+
+
+export default function Home() {
+  return (
+    <>
+      <BackgroundImage />
+
+      <div className=" grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
+    <Searchtrip/>
+        
+      </div>
+    </>
+  );
+}
