@@ -1,6 +1,10 @@
+
+
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
+import { motion } from "framer-motion";
+import { SendHorizonal } from "lucide-react";
 
 type Activity = {
   time?: string;
@@ -20,22 +24,24 @@ export default function ChatPlanner() {
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [tripPlan, setTripPlan] = useState<DayPlan[]>([]);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [tripPlan, loading]);
 
   const handleSubmit = async () => {
     if (!inputValue.trim()) return;
-
     setLoading(true);
+
     try {
       const res = await axios.post("/api/plantrip", { text: inputValue });
       let data = res.data.reply;
 
-      // Strip Markdown ```json wrapper
+      // Clean Markdown-style JSON
       const cleaned = data.replace(/```(?:json)?/g, "").trim();
-
-      // Parse JSON
       const parsed = JSON.parse(cleaned);
 
-      // Extract itinerary array
       const plan: DayPlan[] = (parsed.itinerary || []).map((day: any) => ({
         day: `Day ${day.day}`,
         title: day.title || "",
@@ -44,61 +50,95 @@ export default function ChatPlanner() {
       }));
 
       setTripPlan(plan);
+      setInputValue("");
     } catch (err) {
       console.error(err);
       alert("Failed to generate trip plan. Try again!");
     }
+
     setLoading(false);
   };
 
   return (
-    <div className="max-w-4xl mx-auto mt-8 p-4">
-      {!tripPlan.length && (
-        <>
+    <div className="flex flex-col h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 pt-20">
+      {/* Chat Section */}
+      <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col items-center space-y-6">
+        {tripPlan.length === 0 && !loading && (
+          <p className="text-center text-gray-400 mt-32">
+            ✈️ Start by typing your trip details below...
+          </p>
+        )}
+
+        {tripPlan.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="w-full max-w-2xl space-y-6"
+          >
+            {tripPlan.map((day, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                className="border border-gray-200 bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition"
+              >
+                <h3 className="font-semibold text-xl text-orange-600 mb-2">
+                  {day.day}: {day.title}
+                </h3>
+                <p className="text-gray-700 mb-4">{day.description}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {day.activities.map((act, i) => (
+                    <div
+                      key={i}
+                      className="border rounded-xl p-3 flex gap-3 items-center bg-gray-50 hover:bg-gray-100 transition"
+                    >
+                      {act.image && (
+                        <img
+                          src={act.image}
+                          alt={act.activity}
+                          className="w-16 h-16 object-cover rounded-lg shadow-sm"
+                        />
+                      )}
+                      <div>
+                        <p className="font-medium text-gray-800">{act.activity}</p>
+                        {act.time && <p className="text-xs text-gray-500">{act.time}</p>}
+                        {act.cost && <p className="text-xs text-gray-500">{act.cost}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+
+        {loading && (
+          <div className="text-center text-gray-500 mt-6">Planning your trip...</div>
+        )}
+
+        <div ref={chatEndRef} />
+      </div>
+
+      {/* Fixed Input Bar */}
+      <div className="sticky bottom-0 w-full flex justify-center bg-white/90 backdrop-blur-md border-t border-gray-200 shadow-inner py-4">
+        <div className="flex items-center gap-3 w-full max-w-2xl px-4">
           <textarea
-            className="w-full max-w-2xl p-4 rounded-lg border focus:outline-none focus:ring-2 focus:ring-orange-400 shadow-md"
-            placeholder="Type your trip details here, e.g., 'Plan a 3-day trip to Goa…'"
-            rows={5}
+            className="flex-1 p-4 h-20 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none text-gray-700"
+            placeholder="Type your trip details here... ✈️"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSubmit()}
           />
           <button
-            className="mt-4 px-6 py-2 rounded-lg bg-[var(--color-primary)] text-white font-medium hover:bg-orange-500 transition"
             onClick={handleSubmit}
             disabled={loading}
+            className="p-4 rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 text-white font-semibold shadow hover:shadow-lg transition disabled:opacity-50"
           >
-            {loading ? "Planning..." : "Plan Trip"}
+            <SendHorizonal size={20} />
           </button>
-        </>
-      )}
-
-      {tripPlan.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-4">Your Trip Itinerary</h2>
-          {tripPlan.map((day, idx) => (
-            <div key={idx} className="mb-6 border rounded-lg p-4 shadow-sm bg-white">
-              <h3 className="font-semibold text-xl mb-2">
-                {day.day}: {day.title}
-              </h3>
-              <p className="text-gray-700 mb-2">{day.description}</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(day.activities || []).map((act, i) => (
-                  <div key={i} className="border rounded-md p-2 flex gap-2 items-center bg-gray-50">
-                    {act.image && (
-                      <img src={act.image} alt={act.activity} className="w-16 h-16 object-cover rounded-md" />
-                    )}
-                    <div>
-                      <p className="text-sm font-medium">{act.activity}</p>
-                      {act.time && <p className="text-xs text-gray-500">{act.time}</p>}
-                      {act.cost && <p className="text-xs text-gray-500">{act.cost}</p>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }
