@@ -1,36 +1,28 @@
-import CheapestStay from "./cheapeststay"
-import DayCost from "./Daycost"
-import HowToGetThere from "./HowTogetthere"
-import Overview from "./Overview"
-import ThingsToDo from "./Thingstodo"
-
-
-type ThingsToDoType = {
-  morning: string
-  afternoon: string
-  evening: string
-}
+"use client";
+import { motion } from "framer-motion";
+import ThingsToDo, { ThingsToDoType } from "./Thingstodo";
 
 export type DayPlan = {
-  day: string
-  title: string
-  overview: string
-  howToGetThere: string
-  cheapestStay: string
-  thingsToDo: ThingsToDoType
-  totalCost: string
-}
+  day: string;
+  title: string;
+  overview: string;
+  thingsToDo: ThingsToDoType;
+};
 
 export default function DayItinerary({ dayPlan }: { dayPlan: DayPlan }) {
   return (
-    <div className="prose max-w-none my-8">
-      <h2 className="text-2xl font-bold mb-2">{dayPlan.day} - {dayPlan.title}</h2>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="mt-8 max-w-3xl mx-auto px-4"
+    //   style={{ fontFamily: "'Segoe UI', sans-serif" }}
+    >
+      <h2 className="text-2xl font-bold mb-4 text-gray-900">
+        {dayPlan.day} - {dayPlan.title}
+      </h2>
 
-      <Overview text={dayPlan.overview} />
-      <HowToGetThere text={dayPlan.howToGetThere} />
-      <CheapestStay text={dayPlan.cheapestStay} />
       <ThingsToDo things={dayPlan.thingsToDo} />
-      <DayCost cost={dayPlan.totalCost} />
-    </div>
-  )
+    </motion.div>
+  );
 }
