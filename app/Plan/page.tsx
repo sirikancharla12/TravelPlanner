@@ -8,6 +8,8 @@ import HowToGetThere from "../components/PlanTrip/HowTogetthere";
 import CheapestStay from "../components/PlanTrip/cheapeststay";
 
 type TripPlanData = {
+  place:string;
+  country: string;
   overview: string;
   howToGetThere: string;
   cheapestStay: string;
@@ -68,8 +70,8 @@ export default function TripPlanner() {
         {tripPlan && (
           <>
             <Overview
-              place={inputValue.split(" ")[0] || "Your Destination"}
-              country=""
+              place={tripPlan.place}
+              country={tripPlan.country}
               text={tripPlan.overview}
             />
             <HowToGetThere text={tripPlan.howToGetThere} />

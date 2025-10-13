@@ -5,40 +5,46 @@ export async function POST(req: NextRequest) {
   try {
     const { text } = await req.json();
 
-    const prompt = `
-You are an expert travel planner AI. Create a **detailed, day-by-day itinerary** for a traveler based on the user's input. The response must be a **JSON object** in this format:
+const prompt = `
+You are an expert travel planner AI. Create a **detailed, day-by-day itinerary** for a traveler based on the user's input. 
+The response must be a **JSON object** in this format:
 
 {
-  "overview": "Barcelona is a vibrant city known for its stunning architecture, including the iconic Sagrada Familia and Park Güell. Enjoy the lively atmosphere of Las Ramblas, indulge in delicious tapas, and soak up the sun on the beautiful beaches. Explore the rich history and culture of this Catalan capital.",
-  "howToGetThere": "Arrive at Barcelona-El Prat Airport (BCN). You can take a taxi, airport shuttle, or metro to the city center.",
-  "cheapestStay": "Stay at Slowly Apartments or a budget hostel near the city center for convenience and affordability.",
+"place": "Barcelona", 
+  "country": "Spain",
+  "overview": "Barcelona is a vibrant city known for its stunning architecture...",
+  "howToGetThere": "Arrive at Barcelona-El Prat Airport (BCN)...",
+  "cheapestStay": "Stay at Slowly Apartments...",
+  "photoRefQuery": "Barcelona city view Spain", 
   "days": [
     {
       "day": "1",
       "title": "Arrival & Exploring the City",
-      "overview": "Explore the neighborhood, freshen up, and enjoy the local culture.",
-      "howToGetThere": "Take a taxi or metro from the airport to your accommodation.",
-      "cheapestStay": "Budget hostel or apartment near city center (~$40/night).",
+      "overview": "Explore the neighborhood...",
+      "howToGetThere": "Take a taxi or metro...",
+      "cheapestStay": "Budget hostel near center...",
+      "photoRefQuery": "Barcelona Gothic Quarter",
       "thingsToDo": {
-        "morning": "🛬 Arrive at the airport and take a taxi or shuttle to your accommodation (~30 mins, $25). Freshen up and have breakfast at a local café (~$4).",
-        "afternoon": "⛪ Explore the Gothic Quarter, visit Barcelona Cathedral, and shop for souvenirs. Lunch at La Boqueria Market (~$10).",
-        "evening": "📷 Stroll along La Rambla and enjoy street performances. Dinner at a local restaurant (~$15)."
+        "morning": "🛬 Arrive at the airport...",
+        "afternoon": "⛪ Explore the Gothic Quarter...",
+        "evening": "📷 Stroll along La Rambla..."
       },
       "totalCost": "$52 per person"
     }
   ]
 }
 
-**Requirements:**
-1. Include **overview, howToGetThere, cheapestStay** for the trip.
-2. Include **thingsToDo** grouped by morning, afternoon, evening (3–4 sentences max each).
-3. Include **total cost per day**.
-4. Include transport, food, sightseeing, tickets costs inline.
-5. Make all text **human-friendly and descriptive**.
-6. Output **JSON only**, no extra text or markdown.
+**Additional Instructions:**
+1. Add a "photoRefQuery" field at the trip level and for each day.
+   - This should be a **short, descriptive phrase** suitable for fetching a photo via Google Places API or Google Images.
+   - Example: "Eiffel Tower Paris France"
+2. Include overview, howToGetThere, cheapestStay, and total cost as before.
+3. Make all text human-friendly and realistic.
+4. Output **valid JSON only** — no markdown, no explanations.
 
 User Input: ${text}
 `;
+
 
     const result = await geminiModel.generateContent(prompt);
     const responseText = result.response.text();

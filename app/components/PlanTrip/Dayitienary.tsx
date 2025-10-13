@@ -19,7 +19,7 @@ export default function DayItinerary({ dayPlan }: { dayPlan: DayPlan }) {
     //   style={{ fontFamily: "'Segoe UI', sans-serif" }}
     >
       <h2 className="text-2xl font-bold mb-4 text-gray-900">
-        {dayPlan.day} - {dayPlan.title}
+       Day {dayPlan.day} - {dayPlan.title}
       </h2>
 
       <ThingsToDo things={dayPlan.thingsToDo} />

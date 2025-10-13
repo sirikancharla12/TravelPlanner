@@ -10,12 +10,15 @@ export type ThingsToDoType = {
 };
 
 export default function ThingsToDo({ things }: { things: ThingsToDoType }) {
-  const renderSentences = (text: string) =>
-    text.split(/(?<=[.!?])\s+/).map((sentence, idx) => (
+  const renderSentences = (text?: string) => {
+    if (!text) return <p className="text-gray-500 italic">No activities available.</p>;
+
+    return text.split(/(?<=[.!?])\s+/).map((sentence, idx) => (
       <p key={idx} className="mb-2">
         {sentence}
       </p>
     ));
+  };
 
   return (
     <motion.div
@@ -28,17 +31,17 @@ export default function ThingsToDo({ things }: { things: ThingsToDoType }) {
 
       <div className="mb-4">
         <h4 className="text-xl font-medium text-gray-800 mb-2">🌅 Morning</h4>
-        {renderSentences(things.morning)}
+        {renderSentences(things?.morning)}
       </div>
 
       <div className="mb-4">
         <h4 className="text-xl font-medium text-gray-800 mb-2">🌇 Afternoon</h4>
-        {renderSentences(things.afternoon)}
+        {renderSentences(things?.afternoon)}
       </div>
 
       <div className="mb-4">
         <h4 className="text-xl font-medium text-gray-800 mb-2">🌃 Evening</h4>
-        {renderSentences(things.evening)}
+        {renderSentences(things?.evening)}
       </div>
 
       <div className="mb-4">

@@ -10,7 +10,7 @@ export default function Overview({
   country?: string;
   text: string;
 }) {
-  const hasLocation = place && country;
+  const hasLocation = Boolean(place) || Boolean(country);
 
   return (
     <motion.div
@@ -19,11 +19,16 @@ export default function Overview({
       transition={{ duration: 0.6, ease: "easeOut" }}
       className="mt-10 max-w-3xl mx-auto px-4"
     >
+
       {hasLocation && (
-        <div className="text-center mb-3">
-          <h2 className="text-3xl md:text-4xl font-semibold text-gray-900 tracking-tight">
-            {place}, <span className="text-blue-600">{country}</span>
+        <div className="text-left mb-6">
+          <h2 className="text-3xl md:text-4xl font-semibold text-[var(--color-heading)] tracking-tight">
+            {place}
+            {place && country ? ", " : ""}
+            <span className="text-[var(--color-primary)]">{country}</span>
           </h2>
+
+
         </div>
       )}
 
