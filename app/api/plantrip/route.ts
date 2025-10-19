@@ -27,9 +27,10 @@ The response must be a **JSON object** in this format:
       "thingsToDo": {
         "morning": "🛬 Arrive at the airport...",
         "afternoon": "⛪ Explore the Gothic Quarter...",
-        "evening": "📷 Stroll along La Rambla..."
+        "evening": "📷 Stroll along La Rambla...",
+        "totalCost": "$52 per person"
       },
-      "totalCost": "$52 per person"
+      
     }
   ]
 }
