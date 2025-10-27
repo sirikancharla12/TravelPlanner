@@ -5,50 +5,52 @@ export async function POST(req: NextRequest) {
   try {
     const { text } = await req.json();
 
-const prompt = `
+   const prompt = `
 You are an expert travel planner AI. Create a **detailed, day-by-day itinerary** for a traveler based on the user's input. 
-The response must be a **JSON object** in this format:
 
+Your primary goal: return a **valid JSON** following this structure exactly, and ensure the "from" key is always filled if the user specifies an origin (e.g., "from Delhi").
+
+If no origin is mentioned, omit the "from" key.
+
+### Example output:
 {
-"place": "Barcelona", 
-  "country": "Spain",
-  "overview": "Barcelona is a vibrant city known for its stunning architecture...",
-  "howToGetThere": "Arrive at Barcelona-El Prat Airport (BCN)...",
-  "cheapestStay": "Stay at Slowly Apartments...",
-  "photoRefQuery": "Barcelona city view Spain", 
+  "place": "Goa",
+  "country": "India",
+  "from": "Delhi",
+  "departureDate": "2025-11-10",
+  "overview": "Goa is known for its beaches and nightlife...",
+  "howToGetThere": "Fly from Delhi (DEL) to Goa (GOI)...",
+  "cheapestStay": "Stay near Baga Beach at budget hostels...",
+  "photoRefQuery": "Goa beach India",
   "days": [
     {
       "day": "1",
-      "title": "Arrival & Exploring the City",
-      "overview": "Explore the neighborhood...",
-      "howToGetThere": "Take a taxi or metro...",
-      "cheapestStay": "Budget hostel near center...",
-      "photoRefQuery": "Barcelona Gothic Quarter",
+      "title": "Arrival and beach day",
+      "overview": "Relax at the beach...",
+      "howToGetThere": "Take a taxi from airport...",
+      "cheapestStay": "Budget hostel near Baga Beach",
+      "photoRefQuery": "Goa Baga Beach",
       "thingsToDo": {
-        "morning": "🛬 Arrive at the airport...",
-        "afternoon": "⛪ Explore the Gothic Quarter...",
-        "evening": "📷 Stroll along La Rambla...",
-        "totalCost": "$52 per person"
-      },
-      
+        "morning": "🛬 Arrive at Dabolim Airport (GOI)",
+        "afternoon": "🏖️ Relax at Baga Beach",
+        "evening": "🍽️ Dinner at beach shack",
+        "totalCost": "₹2500 per person"
+      }
     }
   ]
 }
 
-**Additional Instructions:**
-1. Add a "photoRefQuery" field at the trip level and for each day.
-   - This should be a **short, descriptive phrase** suitable for fetching a photo via Google Places API or Google Images.
-   - Example: "Eiffel Tower Paris France"
-2. Include overview, howToGetThere, cheapestStay, and total cost as before.
-3. Make all text human-friendly and realistic.
-4. Output **valid JSON only** — no markdown, no explanations.
+### Important:
+1. Parse the user input carefully to extract both **destination** and **origin** (e.g., “Plan a trip to Bali from Delhi” → place = Bali, from = Delhi).
+2. Always output **valid JSON only** (no explanations, no markdown).
+3. Keep the output realistic with actual locations, costs, and travel details.
 
 User Input: ${text}
 `;
 
-
     const result = await geminiModel.generateContent(prompt);
     const responseText = result.response.text();
+    console.log("Plan trip response:", responseText);
 
     return new Response(JSON.stringify({ reply: responseText }), { status: 200 });
   } catch (err: any) {

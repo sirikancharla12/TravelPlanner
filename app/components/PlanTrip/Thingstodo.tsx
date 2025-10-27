@@ -38,9 +38,8 @@ export default function ThingsToDo({ things }: ThingsToDoProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="mt-8 max-w-3xl mx-auto px-4"
+      className="mt-8 max-w-3xl mx-auto"
     >
-      <h3 className="text-2xl font-bold text-gray-900 mb-6">Things to Do</h3>
 
       <div className="space-y-4">
         {timeBlocks.map((block, idx) => (
@@ -64,7 +63,8 @@ export default function ThingsToDo({ things }: ThingsToDoProps) {
         className="mt-6 p-4 rounded-xl bg-green-50 border border-green-200 flex items-center justify-between"
       >
         <span className="font-semibold text-gray-800">💰 Estimated Cost</span>
-        <span className="text-green-700 font-bold">{things.totalCost}</span>
+        <span className="text-green-700 font-bold"> {things.totalCost}</span>
+
       </motion.div>
     </motion.div>
   );
