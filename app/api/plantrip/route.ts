@@ -3,53 +3,59 @@ import { geminiModel } from "@/lib/api/geminisdk";
 
 export async function POST(req: NextRequest) {
   try {
-    const { text } = await req.json();
+const { text, previousMessages } = await req.json();
 
-   const prompt = `
-You are an expert travel planner AI. Create a **detailed, day-by-day itinerary** for a traveler based on the user's input. 
+const conversationContext = previousMessages
+  .map((msg:any) => `${msg.role.toUpperCase()}: ${typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content)}`)
+  .join("\n");
 
-Your primary goal: return a **valid JSON** following this structure exactly, and ensure the "from" key is always filled if the user specifies an origin (e.g., "from Delhi").
+const prompt = `
+You are an expert travel planner AI. Continue the planning conversation naturally based on the previous chat context and the new user request. 
 
-If no origin is mentioned, omit the "from" key.
+If the user asks to modify the plan (e.g., "make it 5 days", "add Paris", "change hotels"), you must **update or extend** the previous itinerary accordingly — not start from scratch.
 
-### Example output:
+Use the following JSON structure for your reply (always valid JSON, no explanations or markdown):
+
 {
-  "place": "Goa",
-  "country": "India",
-  "from": "Delhi",
-  "departureDate": "2025-11-10",
-  "overview": "Goa is known for its beaches and nightlife...",
-  "howToGetThere": "Fly from Delhi (DEL) to Goa (GOI)...",
-  "cheapestStay": "Stay near Baga Beach at budget hostels...",
-  "photoRefQuery": "Goa beach India",
+  "place": "string",
+  "country": "string",
+  "from": "string (optional)",
+  "departureDate": "YYYY-MM-DD",
+  "overview": "short summary",
+  "howToGetThere": "transportation details",
+  "cheapestStay": "1–2 realistic affordable stay options",
+  "photoRefQuery": "keyword for images",
   "days": [
     {
       "day": "1",
-      "title": "Arrival and beach day",
-      "overview": "Relax at the beach...",
-      "howToGetThere": "Take a taxi from airport...",
-      "cheapestStay": "Budget hostel near Baga Beach",
-      "photoRefQuery": "Goa Baga Beach",
+      "title": "string",
+      "overview": "string",
+      "howToGetThere": "string",
+      "cheapestStay": "string",
+      "photoRefQuery": "string",
       "thingsToDo": {
-        "morning": "🛬 Arrive at Dabolim Airport (GOI)",
-        "afternoon": "🏖️ Relax at Baga Beach",
-        "evening": "🍽️ Dinner at beach shack",
-        "totalCost": "₹2500 per person"
+        "morning": "string",
+        "afternoon": "string",
+        "evening": "string",
+        "totalCost": "string"
       }
     }
   ]
 }
 
-### Important:
-1. Parse the user input carefully to extract both **destination** and **origin** (e.g., “Plan a trip to Bali from Delhi” → place = Bali, from = Delhi).
-2. Always output **valid JSON only** (no explanations, no markdown).
-3. Keep the output realistic with actual locations, costs, and travel details.
+Previous conversation:
+${conversationContext}
 
-User Input: ${text}
+New user message:
+USER: ${text}
+
+Now generate the updated or new travel plan accordingly.
 `;
+
 
     const result = await geminiModel.generateContent(prompt);
     const responseText = result.response.text();
+
     console.log("Plan trip response:", responseText);
 
     return new Response(JSON.stringify({ reply: responseText }), { status: 200 });

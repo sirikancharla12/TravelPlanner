@@ -56,7 +56,8 @@ async function getIATACodeSmart(city: string, token: string): Promise<string | n
             {
               parts: [
                 {
-                  text: `Return ONLY the 3-letter IATA airport code for the following city (no explanation, no extra text): ${city}`,
+                  text: `Return ONLY the 3-letter IATA airport code for this city: ${city}. Example: Paris -> CDG`
+
                 },
               ],
             },
@@ -69,16 +70,17 @@ async function getIATACodeSmart(city: string, token: string): Promise<string | n
     const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim()?.toUpperCase();
     console.log(`🧠 Gemini response for ${city}:`, rawText);
 
-    const match = rawText?.match(/\b[A-Z]{3}\b/);
+    const match = rawText?.toUpperCase().match(/\b[A-Z]{3}\b/);
+
     if (match) {
-      console.log(`✅ Found IATA (Gemini): ${city} → ${match[0]}`);
+      console.log(` Found IATA (Gemini): ${city} → ${match[0]}`);
       return match[0];
     }
   } catch (err) {
-    console.error(`❌ Gemini IATA fallback failed for ${city}:`, err);
+    console.error(` Gemini IATA fallback failed for ${city}:`, err);
   }
 
-  console.warn(`❓ Could not resolve IATA for ${city}`);
+  console.warn(`Could not resolve IATA for ${city}`);
   return null;
 }
 
@@ -91,7 +93,6 @@ export async function GET(req: NextRequest) {
 
     const INDIAN_AIRLINES = ["AI", "6E", "SG", "G8", "UK"]; // Air India, IndiGo, SpiceJet, GoFirst, Vistara
 
-    // 🗓️ Validate departure date
     let departureDate = searchParams.get("departureDate")?.trim();
     const today = new Date();
     const tomorrow = new Date(today);

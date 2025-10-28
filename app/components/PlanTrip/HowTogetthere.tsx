@@ -11,7 +11,7 @@ type Flight = {
   arrival: { iataCode: string };
   duration?: string;
   currency?: string;
-type?: "Domestic" | "International";
+  type?: "Domestic" | "International";
 };
 
 type Props = {
@@ -62,26 +62,37 @@ export default function HowToGetThere({
           return;
         }
 
-        if (data.flights) {
-          const parsed = data.flights.map((f: any) => ({
-            price: f.price,
-            airline: f.airline,
-            departure: f.departure,
-            arrival: f.arrival,
-            duration: f.duration,
-            currency: f.currency || "INR",
+        const rawFlights = data.flights || data.data || data.results || [];
+        if (rawFlights.length > 0) {
+          const parsed = rawFlights.map((f: any) => ({
+            price: f.price?.total || f.price || 0,
+            airline: f.airline || f.carrierCode || "Unknown Airline",
+            departure:
+              f.departure ||
+              f.itineraries?.[0]?.segments?.[0]?.departure || {
+                iataCode: "N/A",
+              },
+            arrival:
+              f.arrival ||
+              f.itineraries?.[0]?.segments?.slice(-1)[0]?.arrival || {
+                iataCode: "N/A",
+              },
+            duration: f.duration || f.itineraries?.[0]?.duration || "N/A",
+            currency: f.currency || f.price?.currency || "INR",
             type: INDIAN_AIRLINES.includes(f.airline)
               ? "Domestic"
               : "International",
           }));
+          parsed.sort((a: Flight, b: Flight) => a.price - b.price);
 
-          parsed.sort((a: { price: number; }, b: { price: number; }) => a.price - b.price);
           setFlights(parsed);
         } else {
+          console.warn("⚠️ No flights found in API response");
           setFlights([]);
         }
-      } catch (err) {
-        console.error("Failed to fetch flights:", err);
+      } catch (error) {
+        console.error("Flight fetch error:", error);
+        setFlights([]);
       } finally {
         setLoading(false);
       }
@@ -117,8 +128,6 @@ export default function HowToGetThere({
           Using {userOrigin} as origin
         </p>
       )}
-
-    
 
       {/* Flights Display Section */}
       <div className="mt-6">
