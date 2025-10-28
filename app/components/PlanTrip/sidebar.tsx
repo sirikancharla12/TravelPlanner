@@ -10,10 +10,12 @@ export default function Sidebar({
   chats,
   onNewChat,
   onSelectChat,
+  onDeleteChat,
 }: {
   chats: Chat[];
   onNewChat: () => void;
   onSelectChat: (id: string) => void;
+  onDeleteChat: (id: string) => void;
 }) {
   return (
     <div className="fixed left-0 top-16 bottom-0 w-64 bg-[#FFF7F4] border-r border-gray-200 flex flex-col shadow-md">
@@ -32,6 +34,7 @@ export default function Sidebar({
           <p className="text-gray-500 text-sm italic">No chats yet</p>
         ) : (
           chats.map((chat) => (
+            <div>
             <button
               key={chat.id}
               onClick={() => onSelectChat(chat.id)}
@@ -40,6 +43,12 @@ export default function Sidebar({
             >
               {chat.title}
             </button>
+
+            <button onClick={()=>onDeleteChat(chat.id)}>
+                Delete
+            </button>
+            </div>
+            
           ))
         )}
       </div>

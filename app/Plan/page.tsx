@@ -68,6 +68,22 @@ useEffect(() => {
     setActiveChatId(id);
   };
 
+  
+const handleDeleteChat = (id: string) => {
+  const updated = chats.filter((chat) => chat.id !== id);
+  setChats(updated);
+  localStorage.setItem("trip_chats", JSON.stringify(updated));
+
+  if (activeChatId === id) {
+    if (updated.length > 0) {
+      setActiveChatId(updated[0].id);
+    } else {
+      setActiveChatId(null);
+    }
+  }
+};
+
+
   const handleUpdateMessages = (updatedMessages: any[]) => {
     setChats((prev) =>
       prev.map((chat) =>
@@ -76,29 +92,40 @@ useEffect(() => {
     );
   };
 
+
   const activeChat = chats.find((c) => c.id === activeChatId);
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar
-        chats={chats.map(({ id, title }) => ({ id, title }))}
-        onNewChat={handleNewChat}
-        onSelectChat={handleSelectChat}
-      />
+  <div className="flex h-screen overflow-hidden">
+    <Sidebar
+      chats={chats.map(({ id, title }) => ({ id, title }))}
+      onNewChat={handleNewChat}
+      onSelectChat={handleSelectChat}
+      onDeleteChat={handleDeleteChat}
+    />
 
-      <div className="flex-1 ml-64 overflow-hidden">
-        {activeChat ? (
-          <TripPlanner
-            key={activeChat.id}
-            initialMessages={activeChat.messages}
-            onMessagesChange={handleUpdateMessages}
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full text-gray-400">
-            Loading your chat...
-          </div>
-        )}
-      </div>
+    <div className="flex-1 ml-64 overflow-hidden">
+      {chats.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4">
+          <p className="text-lg font-medium">No trips yet 🚀</p>
+          <button
+            onClick={handleNewChat}
+            className="bg-[#f55612] hover:bg-[#e34c10] text-white px-6 py-3 rounded-lg font-semibold shadow-md transition"
+          >
+            + Create a New Trip
+          </button>
+        </div>
+      ) : activeChat ? (
+        <TripPlanner
+          key={activeChat.id}
+          initialMessages={activeChat.messages}
+          onMessagesChange={handleUpdateMessages}
+        />
+      ) : (
+        <div className="flex items-center justify-center h-full text-gray-400">
+          Loading your chat...
+        </div>
+      )}
     </div>
-  );
-}
+  </div>
+)}
