@@ -28,8 +28,10 @@
 // }
 
 
+import { SessionProvider } from "next-auth/react";
 import Navbar from "./components/Navbar";
 import "./globals.css";
+import SessionProviderWrapper from "./providers/sessionWrapper";
 
 export const metadata = {
   title: "AI Travel Planner",
@@ -44,8 +46,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-gray-50 text-gray-900 font-inter">
-        <Navbar />
+        <SessionProviderWrapper>
+          <Navbar />
         <main className="pt-16 ">{children}</main>
+        </SessionProviderWrapper>
       </body>
     </html>
   );
