@@ -1,9 +1,8 @@
-
 "use client";
 import React, { useState } from "react";
 import { usePathname } from "next/navigation"; 
 import { Moon, Sun } from "lucide-react";
-import { signIn, signOut, useSession } from "next-auth/react";
+import OtpLogin from "../../app/components/Home/Otplogin"
 
 type LinkProps = React.PropsWithChildren<
   React.AnchorHTMLAttributes<HTMLAnchorElement>
@@ -21,10 +20,9 @@ const Link: React.FC<LinkProps> = ({ href, children, ...props }) => (
 
 export default function Navbar() {
   const [darkMode, setDarkMode] = useState(false);
+  const [showLogin, setShowLogin] = useState(false); 
   const pathname = usePathname(); 
-
-  const { data: session } = useSession();
-  const isHomePage = pathname === '/';
+  const isHomePage = pathname === "/";
 
   const toggleTheme = () => {
     setDarkMode(!darkMode);
@@ -33,41 +31,54 @@ export default function Navbar() {
   
   const navClasses = isHomePage
     ? "fixed top-0 left-0 w-full z-50 transition-all duration-300" 
-    : "fixed top-0 left-0 w-full bg-[var(--color-bg-default)] backdrop-blur-xl shadow-md z-50 transition-all duration-300"; // Default background for other pages
+    : "fixed top-0 left-0 w-full bg-[var(--color-bg-default)] backdrop-blur-xl shadow-md z-50 transition-all duration-300";
 
   return (
-    <nav className={navClasses}> 
-      <div className="container mx-auto flex items-center justify-between px-40 py-3">
-        <div className="font-bold text-xl text-[var(--color-primary)]">
-          TravelMate
-        </div>
+    <>
+      <nav className={navClasses}> 
+        <div className="container mx-auto flex items-center justify-between px-40 py-3">
+          <div className="font-bold text-xl text-[var(--color-primary)]">
+            TravelMate
+          </div>
 
-        <div className="hidden md:flex space-x-6">
-          <Link href="/Plan">Plan a Trip</Link>
-          <Link href="/destinations">Destinations</Link>
-          <Link href="/about">About</Link>
-        </div>
+          <div className="hidden md:flex space-x-6">
+            <Link href="/Plan">Plan a Trip</Link>
+            <Link href="/destinations">Destinations</Link>
+            <Link href="/about">About</Link>
+          </div>
 
-        {/* Right Side */}
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-full hover:bg-[var(--color-accent)] transition"
-          >
-            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-           <div>
-      {session ? (
-        <>
-          <p>Welcome, {session.user?.email}</p>
-          <button onClick={() => signOut()}>Logout</button>
-        </>
-      ) : (
-        <button onClick={() => signIn()}>Login</button>
+          {/* Right Side */}
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-[var(--color-accent)] transition"
+            >
+              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
+            <button
+              onClick={() => setShowLogin(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded"
+            >
+              Login
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {showLogin && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50">
+          <div className="bg-white p-6 rounded-lg w-[90%] max-w-sm relative">
+            <button
+              className="absolute top-2 right-3 text-gray-500 text-xl"
+              onClick={() => setShowLogin(false)}
+            >
+              ✕
+            </button>
+            <OtpLogin />
+          </div>
+        </div>
       )}
-    </div>
-        </div>
-      </div>
-    </nav>
+    </>
   );
 }
