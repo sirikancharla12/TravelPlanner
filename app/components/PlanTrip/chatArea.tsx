@@ -1,12 +1,14 @@
 "use client";
+
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { SendHorizonal, Sparkles } from "lucide-react";
 import DayItinerary, { DayPlan } from "./Dayitienary";
 import Overview from "./Overview";
-import HowToGetThere from "./HowTogetthere";
 import CheapestStay from "./cheapeststay";
+import { getAuth } from "firebase/auth";
+import HowToGetThere from "./HowTogetthere";
 
 type TripPlanData = {
   place: string;
@@ -27,14 +29,23 @@ type Message = {
 
 export default function TripPlanner({
   initialMessages = [],
-  onMessagesChange ,
+  onMessagesChange,
+  onSaveTrip,
 }: {
-  initialMessages: Message[];
+  initialMessages?: Message[];
   onMessagesChange: (updatedMessages: Message[]) => void;
+  onSaveTrip?: (payload: {
+    title?: string;
+    itinerary: Message[];
+    fromLocation?: string | null;
+    toLocation?: string | null;
+    date?: string | null;
+  }) => Promise<void> | void;
 }) {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<Message[]>(initialMessages || []);
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,12 +54,16 @@ export default function TripPlanner({
 
   useEffect(() => {
     onMessagesChange(messages);
-  }, [messages]);
+  }, [messages, onMessagesChange]);
 
   const handleSubmit = async () => {
     if (!inputValue.trim()) return;
     const userMessage: Message = { role: "user", type: "text", content: inputValue };
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => {
+      const next = [...prev, userMessage];
+      onMessagesChange(next);
+      return next;
+    });
     setInputValue("");
     setLoading(true);
 
@@ -70,16 +85,102 @@ export default function TripPlanner({
         content: parsed || cleaned,
       };
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      setMessages((prev) => {
+        const next = [...prev, assistantMessage];
+        onMessagesChange(next);
+        return next;
+      });
     } catch (err) {
       console.error(err);
+      const errorMessage: Message = {
+        role: "assistant",
+        type: "text",
+        content: "Sorry — failed to plan the trip. Please try again.",
+      };
+      setMessages((prev) => {
+        const next = [...prev, errorMessage];
+        onMessagesChange(next);
+        return next;
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSavedTrips = async () => {
+    const lastPlan = [...messages].reverse().find((m) => m.role === "assistant" && m.type === "plan");
+    if (!lastPlan || typeof lastPlan.content === "string") {
+      alert("No structured plan found to save. Generate a plan first.");
+      return;
+    }
 
+    const planData = lastPlan.content as TripPlanData;
+    const title = `${planData.place} — ${planData.country}`;
+    const payload = {
+      title,
+      itinerary: messages,
+      fromLocation: planData.from || null,
+      toLocation: planData.place || null,
+      date: planData.departureDate || null,
+    };
 
+    setSaving(true);
+    try {
+      if (onSaveTrip) {
+        await onSaveTrip(payload);
+        alert("Trip saved!");
+        setSaving(false);
+        return;
+      }
+
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) {
+        alert("Please sign in to save trips.");
+        setSaving(false);
+        return;
+      }
+
+      const idToken = await user.getIdToken(); 
+      const body = {
+        uid: user.uid,
+        ...payload,
+        date: payload.date ? new Date(payload.date).toISOString() : null,
+      };
+
+      const res = await fetch("/api/trips/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        alert("Unauthorized. Please sign in again.");
+        setSaving(false);
+        return;
+      }
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Save failed:", text);
+        alert("Failed to save trip.");
+        setSaving(false);
+        return;
+      }
+
+      const json = await res.json();
+      // optional: you could emit this to parent or update local UI
+      alert("Trip saved!");
+    } catch (err) {
+      console.error("Save trip failed", err);
+      alert("Failed to save trip.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="flex-1 relative bg-[var(--color-bg-default)] overflow-y-auto px-4 md:px-8 pt-8 pb-40 flex flex-col gap-8 max-h-full">
@@ -104,9 +205,7 @@ export default function TripPlanner({
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`w-full flex ${
-              msg.role === "user" ? "justify-end" : "justify-center"
-            }`}
+            className={`w-full flex ${msg.role === "user" ? "justify-end" : "justify-center"}`}
           >
             {msg.role === "user" && (
               <div className="bg-[var(--color-primary)] text-white px-5 py-3 rounded-2xl max-w-xl shadow-md text-base">
@@ -141,6 +240,16 @@ export default function TripPlanner({
                     {msg.content.days.map((day, idx) => (
                       <DayItinerary key={idx} dayPlan={day} />
                     ))}
+
+                    <div className="mt-4">
+                      <button
+                        onClick={handleSavedTrips}
+                        disabled={saving}
+                        className="bg-[#f55612] hover:bg-[#e34c10] text-white px-4 py-2 rounded-md disabled:opacity-60"
+                      >
+                        {saving ? "Saving..." : "Save trip"}
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <p className="text-center text-gray-500">No day itinerary found.</p>

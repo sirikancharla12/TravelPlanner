@@ -1,33 +1,50 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "next/navigation";
 
 export default function TripPage() {
-  const params=useParams();
+  const params = useParams();
   const slug = params?.slug;
   const decodedSlug = typeof slug === "string" ? decodeURIComponent(slug) : "";
   const [tab, setTab] = useState("overview");
   const [image, setImage] = useState<string | null>(null);
   const [destination, setDestination] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [savedTrip, setSavedTrip] = useState<any | null>(null);
 
-useEffect(() => {
-  if (!decodedSlug) return;
+  useEffect(() => {
+    if (!decodedSlug) return;
 
-  const fetchImage = async () => {
-    try {
-      const res = await axios.post("/api/plantrip", { destination: decodedSlug });
-      setImage(res.data.image);
-      setDestination(res.data.destination);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    const isNumericId = /^\d+$/.test(decodedSlug);
 
-  fetchImage();
-}, [decodedSlug]);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        if (isNumericId) {
+          const res = await axios.get(`/api/trips/get?id=${decodedSlug}`);
+          setSavedTrip(res.data.trip || null);
+          if (res.data.trip?.itinerary?.destination) {
+            setDestination(res.data.trip.itinerary.destination);
+          } else {
+            setDestination(res.data.trip?.title || "");
+          }
+          setImage(res.data.trip?.image || null);
+        } else {
+          const res = await axios.post("/api/plantrip", { destination: decodedSlug });
+          setImage(res.data.image);
+          setDestination(res.data.destination);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchData();
+  }, [decodedSlug]);
 
   return (
     <div className="flex h-screen mt-20">
@@ -46,21 +63,25 @@ useEffect(() => {
 
       {/* Content */}
       <main className="flex-1 p-6 overflow-y-auto">
+        {loading && <p>Loading...</p>}
+
         {tab === "overview" && image && (
           <div>
-
-  <img
-  src={image}
-  alt={destination}
-  className="w-[50%] h-[400px] rounded-lg shadow-md object-fill"
-/>
-
-            {/* <img src={image} alt={destination} className="w-[50%] h-[10%] object-cover rounded" /> */}
-            
-            
+            <img
+              src={image}
+              alt={destination}
+              className="w-[50%] h-[400px] rounded-lg shadow-md object-cover"
+            />
             <h1 className="text-2xl font-bold mt-4">{destination}</h1>
+            {savedTrip && (
+              <div className="mt-2 text-sm text-gray-600">
+                <p>Saved Trip: {savedTrip.title}</p>
+                <p>From: {savedTrip.fromLocation || "—"} • To: {savedTrip.toLocation || "—"}</p>
+              </div>
+            )}
           </div>
         )}
+
         {tab === "flights" && <p>✈️ Flights info coming soon...</p>}
         {tab === "hotels" && <p>🏨 Hotels info coming soon...</p>}
         {tab === "plan" && <p>🗓️ Travel itinerary based on your trip details...</p>}
