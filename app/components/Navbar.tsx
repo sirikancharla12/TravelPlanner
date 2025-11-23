@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { usePathname } from "next/navigation"; 
 import { Moon, Sun } from "lucide-react";
-import OtpLogin from "../../app/components/Home/Otplogin"
+import OtpLogin from "./Home/Otplogin";
 
 type LinkProps = React.PropsWithChildren<
   React.AnchorHTMLAttributes<HTMLAnchorElement>
@@ -47,7 +47,6 @@ export default function Navbar() {
             <Link href="/about">About</Link>
           </div>
 
-          {/* Right Side */}
           <div className="flex items-center space-x-4">
             <button
               onClick={toggleTheme}
@@ -66,18 +65,12 @@ export default function Navbar() {
         </div>
       </nav>
 
+     
       {showLogin && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50">
-          <div className="bg-white p-6 rounded-lg w-[90%] max-w-sm relative">
-            <button
-              className="absolute top-2 right-3 text-gray-500 text-xl"
-              onClick={() => setShowLogin(false)}
-            >
-              ✕
-            </button>
-            <OtpLogin />
-          </div>
-        </div>
+        <OtpLogin 
+          onSuccess={() => setShowLogin(false)} 
+          onClose={() => setShowLogin(false)} 
+        />
       )}
     </>
   );
