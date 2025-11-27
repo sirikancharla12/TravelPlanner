@@ -208,6 +208,24 @@ export default function TripPlanner({
     }
   };
 
+  const originForFlights = getOriginFromLastUserMessage(messages);
+
+function getOriginFromLastUserMessage(messages: Message[]): string | undefined {
+  const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
+
+  if (!lastUserMsg || typeof lastUserMsg.content !== "string") return undefined;
+
+  const text = lastUserMsg.content.toLowerCase();
+
+  const match = /from\s+([a-zA-Z\s]+)/i.exec(lastUserMsg.content);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+
+  return undefined;
+}
+
+
   return (
     <div className="flex-1 relative bg-[var(--color-bg-default)] scrollbar-hide px-4 md:px-8 pt-8 pb-40 flex flex-col gap-8 max-h-full">
       {messages.length === 0 && !loading && (
@@ -258,14 +276,12 @@ export default function TripPlanner({
                     text={msg.content.overview}
                   />
 
-                  <HowToGetThere
-                    text={msg.content.howToGetThere}
-                    origin={msg.content.from || "Your location"}
-                    destination={msg.content.place}
-                    departureDate={
-                      msg.content.departureDate || "Flexible"
-                    }
-                  />
+               <HowToGetThere
+  text={msg.content.howToGetThere}
+  origin={originForFlights}         
+  destination={msg.content.place}
+  departureDate={msg.content.departureDate || "Flexible"}
+/>
 
                   <CheapestStay text={msg.content.cheapestStay} />
 
