@@ -172,7 +172,7 @@ export default function Workspace() {
   const activeSavedTrip = savedTrips.find((t) => t.id === activeSavedTripId);
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex height: 100%; overflow-hidden">
       <Sidebar
         chats={chats.map(({ id, title }) => ({ id, title }))}
         savedTrips={savedTrips}
@@ -191,7 +191,7 @@ export default function Workspace() {
           />
         ) : !activeChat ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4">
-            <p className="text-lg font-medium">No trips yet 🚀</p>
+            <p className="text-lg font-medium">No trips yet </p>
             <button
               onClick={handleNewChat}
               className="bg-[#f55612] hover:bg-[#e34c10] text-white px-6 py-3 rounded-lg font-semibold shadow-md transition"
@@ -205,6 +205,7 @@ export default function Workspace() {
             initialMessages={activeChat.messages}
             onMessagesChange={handleUpdateMessages}
             onSaveTrip={handleSaveTrip}
+            
           />
         )}
       </div>

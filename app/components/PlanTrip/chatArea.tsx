@@ -31,6 +31,8 @@ export default function TripPlanner({
   initialMessages = [],
   onMessagesChange,
   onSaveTrip,
+  existingChatId,
+    initiallySaved = false, 
 }: {
   initialMessages?: Message[];
   onMessagesChange: (updatedMessages: Message[]) => void;
@@ -40,17 +42,25 @@ export default function TripPlanner({
     fromLocation?: string | null;
     toLocation?: string | null;
     date?: string | null;
+    chatId?: number | null;
   }) => Promise<void> | void;
+  existingChatId?: number | null;
+    initiallySaved?: boolean;
 }) {
   const [messages, setMessages] = useState<Message[]>(initialMessages || []);
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+   const [isSaved, setIsSaved] = useState(initiallySaved); 
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     contentRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+    useEffect(() => {
+    setIsSaved(initiallySaved);
+  }, [initiallySaved]);
 
   useEffect(() => {
     onMessagesChange(messages);
@@ -58,6 +68,7 @@ export default function TripPlanner({
 
   const handleSubmit = async () => {
     if (!inputValue.trim()) return;
+
     const userMessage: Message = { role: "user", type: "text", content: inputValue };
     setMessages((prev) => {
       const next = [...prev, userMessage];
@@ -66,9 +77,13 @@ export default function TripPlanner({
     });
     setInputValue("");
     setLoading(true);
+    setIsSaved(false); 
 
     try {
-      const res = await axios.post("/api/plantrip", { text: inputValue, previousMessages: messages });
+      const res = await axios.post("/api/plantrip", {
+        text: inputValue,
+        previousMessages: messages,
+      });
       const { reply } = res.data;
       const cleaned = String(reply).replace(/```(?:json)?/g, "").trim();
 
@@ -76,7 +91,7 @@ export default function TripPlanner({
       try {
         parsed = JSON.parse(cleaned);
       } catch {
-        console.error("Parse error");
+        console.error("Parse error parsing trip plan JSON");
       }
 
       const assistantMessage: Message = {
@@ -108,7 +123,11 @@ export default function TripPlanner({
   };
 
   const handleSavedTrips = async () => {
-    const lastPlan = [...messages].reverse().find((m) => m.role === "assistant" && m.type === "plan");
+    if (isSaving || isSaved) return;
+
+    const lastPlan = [...messages].reverse().find(
+      (m) => m.role === "assistant" && m.type === "plan"
+    );
     if (!lastPlan || typeof lastPlan.content === "string") {
       alert("No structured plan found to save. Generate a plan first.");
       return;
@@ -116,20 +135,21 @@ export default function TripPlanner({
 
     const planData = lastPlan.content as TripPlanData;
     const title = `${planData.place} — ${planData.country}`;
+
     const payload = {
       title,
       itinerary: messages,
       fromLocation: planData.from || null,
-      toLocation: planData.place || null,
+      toLocation: planData.place,
       date: planData.departureDate || null,
+      chatId: existingChatId ?? null,
     };
 
-    setSaving(true);
+    setIsSaving(true);
     try {
       if (onSaveTrip) {
         await onSaveTrip(payload);
-        alert("Trip saved!");
-        setSaving(false);
+        setIsSaved(true);
         return;
       }
 
@@ -137,11 +157,11 @@ export default function TripPlanner({
       const user = auth.currentUser;
       if (!user) {
         alert("Please sign in to save trips.");
-        setSaving(false);
+        setIsSaving(false);
         return;
       }
 
-      const idToken = await user.getIdToken(); 
+      const idToken = await user.getIdToken();
       const body = {
         uid: user.uid,
         ...payload,
@@ -159,7 +179,7 @@ export default function TripPlanner({
 
       if (res.status === 401 || res.status === 403) {
         alert("Unauthorized. Please sign in again.");
-        setSaving(false);
+        setIsSaving(false);
         return;
       }
 
@@ -167,23 +187,29 @@ export default function TripPlanner({
         const text = await res.text();
         console.error("Save failed:", text);
         alert("Failed to save trip.");
-        setSaving(false);
+        setIsSaving(false);
         return;
       }
 
       const json = await res.json();
-      // optional: you could emit this to parent or update local UI
-      alert("Trip saved!");
+
+      if (json?.alreadyExists) {
+        alert("This trip already exists in your saved trips. Open it from the sidebar.");
+      } else {
+        alert("Trip saved!");
+      }
+
+      setIsSaved(true);
     } catch (err) {
       console.error("Save trip failed", err);
       alert("Failed to save trip.");
     } finally {
-      setSaving(false);
+      setIsSaving(false);
     }
   };
 
   return (
-    <div className="flex-1 relative bg-[var(--color-bg-default)] overflow-y-auto px-4 md:px-8 pt-8 pb-40 flex flex-col gap-8 max-h-full">
+    <div className="flex-1 relative bg-[var(--color-bg-default)] scrollbar-hide px-4 md:px-8 pt-8 pb-40 flex flex-col gap-8 max-h-full">
       {messages.length === 0 && !loading && (
         <motion.div
           className="flex flex-col items-center text-center mt-24 md:mt-32 gap-4"
@@ -205,63 +231,82 @@ export default function TripPlanner({
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`w-full flex ${msg.role === "user" ? "justify-end" : "justify-center"}`}
+            className={`w-full flex ${
+              msg.role === "user" ? "justify-end" : "justify-center"
+            }`}
           >
             {msg.role === "user" && (
               <div className="bg-[var(--color-primary)] text-white px-5 py-3 rounded-2xl max-w-xl shadow-md text-base">
-                {typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content)}
+                {typeof msg.content === "string"
+                  ? msg.content
+                  : JSON.stringify(msg.content)}
               </div>
             )}
 
-            {msg.role === "assistant" && msg.type === "plan" && typeof msg.content !== "string" && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className=" w-full max-w-4xl p-8 space-y-10"
-              >
-                <Overview
-                  place={msg.content.place}
-                  country={msg.content.country}
-                  text={msg.content.overview}
-                />
+            {msg.role === "assistant" &&
+              msg.type === "plan" &&
+              typeof msg.content !== "string" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="w-full max-w-4xl p-8 space-y-10"
+                >
+                  <Overview
+                    place={msg.content.place}
+                    country={msg.content.country}
+                    text={msg.content.overview}
+                  />
 
-                <HowToGetThere
-                  text={msg.content.howToGetThere}
-                  origin={msg.content.from || "Your location"}
-                  destination={msg.content.place}
-                  departureDate={msg.content.departureDate || "Flexible"}
-                />
+                  <HowToGetThere
+                    text={msg.content.howToGetThere}
+                    origin={msg.content.from || "Your location"}
+                    destination={msg.content.place}
+                    departureDate={
+                      msg.content.departureDate || "Flexible"
+                    }
+                  />
 
-                <CheapestStay text={msg.content.cheapestStay} />
+                  <CheapestStay text={msg.content.cheapestStay} />
 
-                {msg.content.days?.length > 0 ? (
-                  <div className="space-y-8">
-                    {msg.content.days.map((day, idx) => (
-                      <DayItinerary key={idx} dayPlan={day} />
-                    ))}
+                  {msg.content.days?.length > 0 ? (
+                    <div className="space-y-8">
+                      {msg.content.days.map((day, idx) => (
+                        <DayItinerary key={idx} dayPlan={day} />
+                      ))}
 
-                    <div className="mt-4">
-                      <button
-                        onClick={handleSavedTrips}
-                        disabled={saving}
-                        className="bg-[#f55612] hover:bg-[#e34c10] text-white px-4 py-2 rounded-md disabled:opacity-60"
-                      >
-                        {saving ? "Saving..." : "Save trip"}
-                      </button>
+                      <div className="mt-4 flex items-center justify-start">
+                        <button
+                          onClick={handleSavedTrips}
+                          disabled={isSaving || isSaved}
+                          className={`px-4 py-2 rounded-md font-medium shadow ${
+                            isSaved
+                              ? "bg-green-400 text-white cursor-default"
+                              : "bg-[#f55612] text-white hover:bg-[#e34c10]"
+                          } disabled:opacity-60`}
+                        >
+                          {isSaving
+                            ? "Saving..."
+                            : isSaved? "Saved"
+                            : "Save"}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <p className="text-center text-gray-500">No day itinerary found.</p>
-                )}
-              </motion.div>
-            )}
+                  ) : (
+                    <p className="text-center text-gray-500">
+                      No day itinerary found.
+                    </p>
+                  )}
+                </motion.div>
+              )}
 
-            {msg.role === "assistant" && msg.type === "text" && typeof msg.content === "string" && (
-              <div className="bg-gray-100 border border-gray-200 text-gray-800 px-5 py-4 rounded-2xl max-w-2xl shadow-sm text-base leading-relaxed">
-                {msg.content}
-              </div>
-            )}
+            {msg.role === "assistant" &&
+              msg.type === "text" &&
+              typeof msg.content === "string" && (
+                <div className="bg-gray-100 border border-gray-200 text-gray-800 px-5 py-4 rounded-2xl max-w-2xl shadow-sm text-base leading-relaxed">
+                  {msg.content}
+                </div>
+              )}
           </div>
         ))}
 

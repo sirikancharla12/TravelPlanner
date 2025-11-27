@@ -28,18 +28,10 @@ model Chat {
   updatedAt DateTime  @updatedAt
   userId    Int
   user      User      @relation(fields: [userId], references: [id])
-  messages  Message[]
   trips     Trip[]
 }
 
-model Message {
-  id        Int      @id @default(autoincrement())
-  content   String
-  role      String
-  createdAt DateTime @default(now())
-  chatId    Int
-  chat      Chat     @relation(fields: [chatId], references: [id])
-}
+
 
 model Trip {
   id           Int       @id @default(autoincrement())
