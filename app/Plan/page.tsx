@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import TripPlanner from "../components/PlanTrip/chatArea";
 import Sidebar from "../components/PlanTrip/sidebar";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 
 interface Chat {
   id: string;
   title: string;
   messages: any[];
+    savedTripId?: number | null;
 }
 
 interface SavedTrip {
@@ -27,6 +28,39 @@ export default function Workspace() {
   const [savedTrips, setSavedTrips] = useState<SavedTrip[]>([]);
   const [activeSavedTripId, setActiveSavedTripId] = useState<number | null>(null);
 
+
+const createDefaultChat = () => {
+  const firstChat: Chat = {
+    id: Date.now().toString(),
+    title: "Trip 1",
+    messages: [],
+    savedTripId: null,
+  };
+  setChats([firstChat]);
+  setActiveChatId(firstChat.id);
+  localStorage.setItem("trip_chats", JSON.stringify([firstChat]));
+};
+
+
+  const fetchSavedTrips = async (uid: string) => {
+    try {
+      const res = await fetch(`/api/trips/list?uid=${uid}`);
+      if (!res.ok) throw new Error("Failed to load saved trips");
+      const json = await res.json();
+      const trips: SavedTrip[] = json.trips || [];
+      setSavedTrips(trips);
+
+      if (trips.length > 0) {
+        setActiveSavedTripId(trips[0].id);
+        setActiveChatId(null);
+      }
+    } catch (err) {
+      console.warn("fetchSavedTrips error", err);
+      setSavedTrips([]);
+    }
+  };
+
+
   useEffect(() => {
     const saved = localStorage.getItem("trip_chats");
     if (saved) {
@@ -35,53 +69,44 @@ export default function Workspace() {
         ...chat,
         title: chat.title || `Trip ${index + 1}`,
         messages: chat.messages || [],
+        savedTripId: chat.savedTripId ?? null,
       }));
 
       if (fixedChats.length > 0) {
         setChats(fixedChats);
         setActiveChatId(fixedChats[0].id);
+        
       } else {
         createDefaultChat();
       }
     } else {
       createDefaultChat();
     }
-
-    fetchSavedTrips();
   }, []);
 
-  const createDefaultChat = () => {
-    const firstChat = { id: Date.now().toString(), title: "Trip 1", messages: [] };
-    setChats([firstChat]);
-    setActiveChatId(firstChat.id);
-    localStorage.setItem("trip_chats", JSON.stringify([firstChat]));
-  };
 
-  const fetchSavedTrips = async () => {
-    try {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (!user) {
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
+      if (user) {
+        fetchSavedTrips(user.uid);
+      } else {
         setSavedTrips([]);
-        return;
+        setActiveSavedTripId(null);
       }
-      const res = await fetch(`/api/trips/list?uid=${user.uid}`);
-      if (!res.ok) throw new Error("Failed to load saved trips");
-      const json = await res.json();
-      setSavedTrips(json.trips || []);
-    } catch (err) {
-      console.warn("fetchSavedTrips error", err);
-      setSavedTrips([]);
-    }
-  };
+    });
 
-//save trip to db
+    return () => unsubscribe();
+  }, []);
+
+
   const handleSaveTrip = async (payload: {
     title?: string;
     itinerary: any;
     fromLocation?: string | null;
     toLocation?: string | null;
     date?: string | null;
+    chatId?: number | null;
   }) => {
     try {
       const auth = getAuth();
@@ -91,6 +116,7 @@ export default function Workspace() {
         return;
       }
 
+      
       const res = await fetch("/api/trips/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -101,6 +127,7 @@ export default function Workspace() {
           fromLocation: payload.fromLocation || null,
           toLocation: payload.toLocation || null,
           date: payload.date || null,
+          chatId: payload.chatId ?? null,
         }),
       });
 
@@ -110,6 +137,39 @@ export default function Workspace() {
       }
 
       const json = await res.json();
+
+      if (json.alreadyExists) {
+        const existingId: number = json.trip.id;
+        setActiveSavedTripId(existingId);
+        setActiveChatId(null);
+
+         if (activeChatId) {
+    setChats((prev) => {
+      const updated = prev.map((chat) =>
+        chat.id === activeChatId ? { ...chat, savedTripId: existingId } : chat
+      );
+      localStorage.setItem("trip_chats", JSON.stringify(updated));
+      return updated;
+    });
+  }
+
+        setSavedTrips((prev) => {
+          const without = prev.filter((t) => t.id !== existingId);
+          const updatedTrip: SavedTrip = {
+            id: json.trip.id,
+            title: json.trip.title,
+            itinerary: json.trip.itinerary,
+            fromLocation: json.trip.fromLocation,
+            toLocation: json.trip.toLocation,
+            date: json.trip.date ? String(json.trip.date) : null,
+          };
+          return [updatedTrip, ...without];
+        });
+
+        alert("This trip already exists. Opened existing trip.");
+        return;
+      }
+
       const newTrip: SavedTrip = {
         id: json.trip.id,
         title: json.trip.title,
@@ -121,6 +181,16 @@ export default function Workspace() {
 
       setSavedTrips((prev) => [newTrip, ...prev]);
       setActiveSavedTripId(newTrip.id);
+      setActiveChatId(null);
+      if (activeChatId) {
+  setChats((prev) => {
+    const updated = prev.map((chat) =>
+      chat.id === activeChatId ? { ...chat, savedTripId: newTrip.id } : chat
+    );
+    localStorage.setItem("trip_chats", JSON.stringify(updated));
+    return updated;
+  });
+}
       alert("Trip saved!");
     } catch (err: any) {
       console.error("handleSaveTrip error", err);
@@ -128,13 +198,19 @@ export default function Workspace() {
     }
   };
 
+
   const handleNewChat = () => {
-    const newChat = { id: Date.now().toString(), title: `Trip ${chats.length + 1}`, messages: [] };
+    const newChat = {
+      id: Date.now().toString(),
+      title: `Trip ${chats.length + 1}`,
+      messages: [],
+          savedTripId: null,
+    };
     const updated = [...chats, newChat];
     setChats(updated);
     setActiveChatId(newChat.id);
-    localStorage.setItem("trip_chats", JSON.stringify(updated));
     setActiveSavedTripId(null);
+    localStorage.setItem("trip_chats", JSON.stringify(updated));
   };
 
   const handleSelectChat = (id: string) => {
@@ -155,10 +231,14 @@ export default function Workspace() {
 
   const handleUpdateMessages = (updatedMessages: any[]) => {
     setChats((prev) =>
-      prev.map((chat) => (chat.id === activeChatId ? { ...chat, messages: updatedMessages } : chat))
+      prev.map((chat) =>
+        chat.id === activeChatId ? { ...chat, messages: updatedMessages } : chat
+      )
     );
     setTimeout(() => {
-      const updated = (chats || []).map((c) => (c.id === activeChatId ? { ...c, messages: updatedMessages } : c));
+      const updated = (chats || []).map((c) =>
+        c.id === activeChatId ? { ...c, messages: updatedMessages } : c
+      );
       localStorage.setItem("trip_chats", JSON.stringify(updated));
     }, 0);
   };
@@ -187,11 +267,13 @@ export default function Workspace() {
           <TripPlanner
             key={`saved-${activeSavedTrip.id}`}
             initialMessages={activeSavedTrip.itinerary || []}
-            onMessagesChange={(updatedMessages: any[]) => {}}
+            onMessagesChange={() => {}}
+            initiallySaved={true}           
+            existingChatId={undefined}       
           />
         ) : !activeChat ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4">
-            <p className="text-lg font-medium">No trips yet </p>
+            <p className="text-lg font-medium">No trips yet</p>
             <button
               onClick={handleNewChat}
               className="bg-[#f55612] hover:bg-[#e34c10] text-white px-6 py-3 rounded-lg font-semibold shadow-md transition"
@@ -205,7 +287,7 @@ export default function Workspace() {
             initialMessages={activeChat.messages}
             onMessagesChange={handleUpdateMessages}
             onSaveTrip={handleSaveTrip}
-            
+            initiallySaved={!!activeChat.savedTripId} 
           />
         )}
       </div>
