@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { usePathname } from "next/navigation"; 
+import { usePathname } from "next/navigation";
 import { Moon, Sun } from "lucide-react";
 import OtpLogin from "./Home/Otplogin";
 import { auth } from "../../lib/firebase";
@@ -13,7 +13,7 @@ type LinkProps = React.PropsWithChildren<
 const Link: React.FC<LinkProps> = ({ href, children, ...props }) => (
   <a
     href={href}
-    className="px-4 py-2 text-[var(--color-small)] hover:text-[var(--color-primary)] transition"
+    className="px-3 py-2 text-[var(--color-small)] hover:text-[var(--color-primary)] transition"
     {...props}
   >
     {children}
@@ -22,27 +22,27 @@ const Link: React.FC<LinkProps> = ({ href, children, ...props }) => (
 
 export default function Navbar() {
   const [darkMode, setDarkMode] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);  
+  const [showLogin, setShowLogin] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  const pathname = usePathname(); 
+  const pathname = usePathname();
   const isHomePage = pathname === "/";
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser); 
+      setUser(currentUser);
     });
     return () => unsubscribe();
   }, []);
 
   const toggleTheme = () => {
-    setDarkMode(!darkMode);
+    setDarkMode((prev) => !prev);
     document.documentElement.classList.toggle("dark");
   };
-  
+
   const navClasses = isHomePage
-    ? "fixed top-0 left-0 w-full z-50 transition-all duration-300" 
-    : "fixed top-0 left-0 w-full bg-[var(--color-bg-default)] backdrop-blur-xl shadow-md z-50 transition-all duration-300";
+    ? "fixed top-0 left-0 w-full z-50 bg-[var(--color-bg-default)] border-b border-gray-200"
+    : "fixed top-0 left-0 w-full z-50 bg-[var(--color-bg-default)] backdrop-blur-xl shadow-sm";
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -51,20 +51,24 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className={navClasses}> 
-        <div className="container mx-auto flex items-center justify-between px-40 py-3">
+      <nav className={navClasses}>
+        {/* INNER CONTAINER – matches whole site width */}
+        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-16">
+          {/* Logo / brand */}
           <div className="font-bold text-xl text-[var(--color-primary)]">
             TravelMate
           </div>
 
-          <div className="hidden md:flex space-x-6">
+          {/* Center links */}
+          <div className="hidden md:flex items-center space-x-4">
             <Link href="/Plan">Plan a Trip</Link>
             <Link href="/destinations">Destinations</Link>
             <Link href="/about">About</Link>
+            <Link href="/Trips">Saved Trips</Link>
           </div>
 
           {/* Right Side */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <button
               onClick={toggleTheme}
               className="p-2 rounded-full hover:bg-[var(--color-accent)] transition"
@@ -75,14 +79,14 @@ export default function Navbar() {
             {user ? (
               <button
                 onClick={handleLogout}
-                className="bg-red-600 text-white px-4 py-2 rounded"
+                className="bg-red-600 text-white px-4 py-2 rounded text-sm font-medium"
               >
                 Logout
               </button>
             ) : (
               <button
                 onClick={() => setShowLogin(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded"
+                className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium"
               >
                 Login
               </button>
@@ -92,7 +96,7 @@ export default function Navbar() {
       </nav>
 
       {showLogin && (
-        <OtpLogin 
+        <OtpLogin
           onSuccess={() => setShowLogin(false)}
           onClose={() => setShowLogin(false)}
         />
