@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from "react";
 import TripPlanner from "../components/PlanTrip/chatArea";
-import Sidebar from "../components/PlanTrip/sidebar";
 import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 
 interface Chat {
   id: string;
   title: string;
   messages: any[];
-    savedTripId?: number | null;
+  savedTripId?: number | null;
 }
 
 interface SavedTrip {
@@ -29,17 +28,17 @@ export default function Workspace() {
   const [activeSavedTripId, setActiveSavedTripId] = useState<number | null>(null);
 
 
-const createDefaultChat = () => {
-  const firstChat: Chat = {
-    id: Date.now().toString(),
-    title: "Trip 1",
-    messages: [],
-    savedTripId: null,
+  const createDefaultChat = () => {
+    const firstChat: Chat = {
+      id: Date.now().toString(),
+      title: "Trip 1",
+      messages: [],
+      savedTripId: null,
+    };
+    setChats([firstChat]);
+    setActiveChatId(firstChat.id);
+    localStorage.setItem("trip_chats", JSON.stringify([firstChat]));
   };
-  setChats([firstChat]);
-  setActiveChatId(firstChat.id);
-  localStorage.setItem("trip_chats", JSON.stringify([firstChat]));
-};
 
 
   const fetchSavedTrips = async (uid: string) => {
@@ -75,7 +74,7 @@ const createDefaultChat = () => {
       if (fixedChats.length > 0) {
         setChats(fixedChats);
         setActiveChatId(fixedChats[0].id);
-        
+
       } else {
         createDefaultChat();
       }
@@ -116,7 +115,7 @@ const createDefaultChat = () => {
         return;
       }
 
-      
+
       const res = await fetch("/api/trips/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -143,15 +142,15 @@ const createDefaultChat = () => {
         setActiveSavedTripId(existingId);
         setActiveChatId(null);
 
-         if (activeChatId) {
-    setChats((prev) => {
-      const updated = prev.map((chat) =>
-        chat.id === activeChatId ? { ...chat, savedTripId: existingId } : chat
-      );
-      localStorage.setItem("trip_chats", JSON.stringify(updated));
-      return updated;
-    });
-  }
+        if (activeChatId) {
+          setChats((prev) => {
+            const updated = prev.map((chat) =>
+              chat.id === activeChatId ? { ...chat, savedTripId: existingId } : chat
+            );
+            localStorage.setItem("trip_chats", JSON.stringify(updated));
+            return updated;
+          });
+        }
 
         setSavedTrips((prev) => {
           const without = prev.filter((t) => t.id !== existingId);
@@ -183,14 +182,14 @@ const createDefaultChat = () => {
       setActiveSavedTripId(newTrip.id);
       setActiveChatId(null);
       if (activeChatId) {
-  setChats((prev) => {
-    const updated = prev.map((chat) =>
-      chat.id === activeChatId ? { ...chat, savedTripId: newTrip.id } : chat
-    );
-    localStorage.setItem("trip_chats", JSON.stringify(updated));
-    return updated;
-  });
-}
+        setChats((prev) => {
+          const updated = prev.map((chat) =>
+            chat.id === activeChatId ? { ...chat, savedTripId: newTrip.id } : chat
+          );
+          localStorage.setItem("trip_chats", JSON.stringify(updated));
+          return updated;
+        });
+      }
       alert("Trip saved!");
     } catch (err: any) {
       console.error("handleSaveTrip error", err);
@@ -204,7 +203,7 @@ const createDefaultChat = () => {
       id: Date.now().toString(),
       title: `Trip ${chats.length + 1}`,
       messages: [],
-          savedTripId: null,
+      savedTripId: null,
     };
     const updated = [...chats, newChat];
     setChats(updated);
@@ -253,23 +252,14 @@ const createDefaultChat = () => {
 
   return (
     <div className="flex height: 100%; overflow-hidden">
-      <Sidebar
-        chats={chats.map(({ id, title }) => ({ id, title }))}
-        savedTrips={savedTrips}
-        onNewChat={handleNewChat}
-        onSelectChat={handleSelectChat}
-        onDeleteChat={handleDeleteChat}
-        onOpenSavedTrip={openSavedTrip}
-      />
-
-      <div className="flex-1 ml-64 overflow-hidden">
+     <div className="flex-1 ml-64 overflow-hidden">
         {activeSavedTrip ? (
           <TripPlanner
             key={`saved-${activeSavedTrip.id}`}
             initialMessages={activeSavedTrip.itinerary || []}
-            onMessagesChange={() => {}}
-            initiallySaved={true}           
-            existingChatId={undefined}       
+            onMessagesChange={() => { }}
+            initiallySaved={true}
+            existingChatId={undefined}
           />
         ) : !activeChat ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4">
@@ -287,7 +277,7 @@ const createDefaultChat = () => {
             initialMessages={activeChat.messages}
             onMessagesChange={handleUpdateMessages}
             onSaveTrip={handleSaveTrip}
-            initiallySaved={!!activeChat.savedTripId} 
+            initiallySaved={!!activeChat.savedTripId}
           />
         )}
       </div>

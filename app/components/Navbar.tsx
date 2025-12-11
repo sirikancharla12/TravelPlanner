@@ -61,6 +61,8 @@ export default function Navbar() {
             <Link href="/Plan">Plan a Trip</Link>
             <Link href="/destinations">Destinations</Link>
             <Link href="/about">About</Link>
+            <Link href="/savedTrips">Saved Trips</Link>
+
           </div>
 
           {/* Right Side */}
