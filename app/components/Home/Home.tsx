@@ -1,17 +1,26 @@
-import { Search } from "lucide-react";
+
+import { NAVBAR_HEIGHT } from "@/lib/constants";
 import BackgroundImage from "./Background";
 import Searchtrip from "./Searchtrip";
 
-
-export default function Home() {
+export default function MainHome() {
   return (
     <>
       <BackgroundImage />
 
-      <div className=" grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-    <Searchtrip/>
-        
+      <section
+        className="relative flex items-center justify-center"
+        style={{
+          minHeight: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
+          marginTop: `${NAVBAR_HEIGHT}px`,
+        }}
+      >
+         <div className="fixed inset-0 flex items-center justify-center pointer-events-none">
+        <div className="pointer-events-auto">
+          <Searchtrip />
+        </div>
       </div>
+      </section>
     </>
   );
 }

@@ -59,12 +59,25 @@ async function getIATACodeSmart(
 
   return { code: null, name: city };
 }
+function cleanCityInput(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(/\bfrom\b|\bto\b|\bon\b|\btrip\b|\btravel\b/g, "")
+    .replace(/\d{1,2}(st|nd|rd|th)?/g, "") // dates like 23rd
+    .replace(/[^\w\s]/g, "")
+    .trim()
+    .split(" ")[0]; // take first word only
+}
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const rawOrigin = searchParams.get("origin")?.trim() || "";
-    const rawDest = searchParams.get("destination")?.trim() || "";
+  
+    const rawOriginInput = searchParams.get("origin")?.trim() || "";
+const rawOrigin = cleanCityInput(rawOriginInput);
+const rawDestInput = searchParams.get("destination")?.trim() || "";
+const rawDest = cleanCityInput(rawDestInput);
+
 
     const lat = searchParams.get("lat");
     const lon = searchParams.get("lon");
@@ -97,6 +110,8 @@ export async function GET(req: NextRequest) {
 
     let originCode: string | null = null;
     let originName = "Your Location";
+
+    
 
     if (
       rawOrigin &&

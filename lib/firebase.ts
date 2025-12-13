@@ -1,7 +1,8 @@
 // lib/firebase.ts
-import { initializeApp } from "firebase/app";
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+
+
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
@@ -13,16 +14,6 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID!,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-//  Initialize and export auth
 export const auth = getAuth(app);
-auth.settings.appVerificationDisabledForTesting = false;
-
-
-//firebase db
-export const db = getFirestore(app);
-
-//  Export Recaptcha and phone auth functions
-export { RecaptchaVerifier, signInWithPhoneNumber };

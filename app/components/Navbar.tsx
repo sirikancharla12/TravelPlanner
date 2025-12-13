@@ -52,7 +52,8 @@ export default function Navbar() {
   return (
     <>
       <nav className={navClasses}> 
-        <div className="container mx-auto flex items-center justify-between px-40 py-3">
+          <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
+
           <div className="font-bold text-xl text-[var(--color-primary)]">
             TravelMate
           </div>

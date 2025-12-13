@@ -241,7 +241,7 @@ export default function TripPlanner({
 
   return (
     <div className="bg-[var(--color-bg-default)]">
-      <div className="max-w-6xl mx-auto px-6">
+      <div className="max-w-5xl mx-auto px-6">
         {!hasContent ? (
           <div
             className="flex items-center justify-center"
@@ -263,10 +263,12 @@ export default function TripPlanner({
             </motion.div>
           </div>
         ) : (
-          <div
-            className="flex flex-col gap-10 items-center overflow-y-auto pb-6"
-            style={{ maxHeight: "calc(100vh - 9rem)" }}
-          >
+         <div
+  className="overflow-y-auto pb-32"
+  style={{ maxHeight: "calc(100vh - 9rem)" }}
+>
+  <div className="max-w-3xl mx-auto px-6 flex flex-col gap-10">
+
             {messages.map((msg, index) => (
               <div
                 key={index}
@@ -363,11 +365,14 @@ export default function TripPlanner({
 
             <div ref={contentRef} />
           </div>
+    </div>
+
         )}
       </div>
 
+
       <div className="fixed bottom-0 left-0 right-0 bg-[var(--color-bg-default)] border-t border-gray-200 py-4 shadow-lg z-50">
-        <div className="max-w-6xl mx-auto px-6 flex items-center gap-3">
+        <div className="max-w-3xl mx-auto px-6 flex items-center gap-3">
           <textarea
             className="flex-1 p-4 h-16 rounded-2xl border border-gray-300 
               focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]
@@ -398,5 +403,6 @@ export default function TripPlanner({
         </div>
       </div>
     </div>
+    
   );
 }

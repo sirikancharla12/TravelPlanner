@@ -15,6 +15,8 @@ interface ThingsToDoProps {
   things: ThingsToDoType;
 }
 
+
+
 export default function ThingsToDo({ things }: ThingsToDoProps) {
   const renderSentences = (text?: string) => {
     if (!text)
