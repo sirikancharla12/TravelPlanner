@@ -1,12 +1,37 @@
+"use client";
+import axios from "axios";
 import { Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import React, { useState } from "react";
+
+
 
 export default function Searchtrip() {
+
+const router =useRouter();
+const [input,setinput]=useState("");
+const [loading,setloading]=useState(false);
+
+const handleSubmit=async()=>{
+  if (!input.trim()) return;
+  try{
+    setloading(true);
+const res=axios.post("/api/explore",{
+  slug:input
+});
+console.log(res);
+}catch(err){
+  console.log(err);
+}
+finally{
+  setloading(false);
+}
+}
+
   return (
     <div className="text-center max-w-3xl mx-auto space-y-6">
 
-     
-
-      {/* Heading */}
+           {/* Heading */}
       <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
         Plan your perfect trip <br />
         with AI assistance
@@ -25,12 +50,18 @@ export default function Searchtrip() {
         </div>
         <input
           type="text"
+          value={input}
           placeholder="Where do you want to go? (e.g. Goa, Paris, Bali)"
           className="flex-1 py-4 px-2 outline-none text-gray-700"
+          onChange={(e)=>setinput(e.target.value)}
         />
-        <button className="bg-blue-600 text-white px-6 py-3 rounded-xl m-1 hover:bg-blue-700 transition">
-          Explore
-        </button>
+       <button
+  onClick={handleSubmit}
+  className="bg-blue-600 text-white px-6 py-3 rounded-xl"
+  disabled={loading}
+>
+   {loading ? "Exploring..." : "Explore"}
+</button>
       </div>
 
       {/* Popular chips */}

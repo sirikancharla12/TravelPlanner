@@ -16,12 +16,13 @@ export default function BackgroundImage() {
 
       <div className="absolute inset-0 bg-black/20" />
 
-      <div
-        className="absolute inset-0 bg-gradient-to-b
-        from-blue-200/40
-        via-transparent
-        to-white/80"
-      />
+    <div
+  className="absolute inset-0 bg-gradient-to-b
+  from-blue-200/30 
+  via-transparent
+  to-white/40"
+/>
+ {/* 40 80 */}
     </div>
   );
 }
