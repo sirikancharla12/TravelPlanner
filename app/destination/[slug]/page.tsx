@@ -1,54 +1,91 @@
-import CategoryShowcase from "@/app/components/Destination/Category";
+"use client";
+
 import DestinationHero from "@/app/components/Destination/Hero";
-import DestinationMap from "@/app/components/Destination/Map";
-import PlanTripCTA from "@/app/components/Destination/PlanTrip";
-import DestinationStats from "@/app/components/Destination/Stats";
-import DestinationTabs from "@/app/components/Destination/Tabs";
+import { useEffect, useState } from "react";
 
+export default function ExplorePage({ params }: any) {
+  const slug = decodeURIComponent(params.slug);
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-// Mock AI/DB data (later you’ll load from API/AI)
-const destinationData = {
-  slug: "goa",
-  name: "Goa",
-  country: "India",
-  rating: 4.8,
-  reviews: "12k Reviews",
-  trending: "#1 Trending in Beach Destinations",
-  summary:
-    "Goa is a kaleidoscopic blend of Indian and Portuguese cultures, sweetened with sun, sea, sand, seafood, and spirituality.",
-  categories: [
-    { title: "Beaches", image: "/destinations/goa/beach.jpg" },
-    { title: "History & Culture", image: "/destinations/goa/culture.jpg" },
-    { title: "Nightlife", image: "/destinations/goa/nightlife.jpg" },
-    { title: "Food", image: "/destinations/goa/food.jpg" },
-  ],
-  stats: {
-    whyVisit:
-      "Perfect mix of beaches, nightlife, culture, and relaxation.",
-    bestTime: "Nov – Feb",
-    weather: "28°C avg / Humidity 76%",
-    budget: "$$ (₹2500-₹5000 per day)",
-    tips: ["Carry cash", "Rent a scooter", "Visit off-peak times"],
-  },
-  mapCoords: { lat: 15.2993, lng: 74.1240 },
-};
+  useEffect(() => {
+    const fetchExplore = async () => {
+      const res = await fetch("/api/explore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug }),
+      });
 
-export default function DestinationPage() {
+      const json = await res.json();
+      setData(json);
+      setLoading(false);
+    };
+
+    fetchExplore();
+  }, [slug]);
+
+  if (loading) return <p className="p-6">Loading...</p>;
+  if (!data) return <p>Error loading destination</p>;
+
   return (
-    <main className="space-y-12 pb-32">
-      <DestinationHero destination={destinationData} />
+    <>
+      {/* 🔥 HERO SECTION */}
+      <DestinationHero overview={data.overview} />
 
-      <div className="max-w-7xl mx-auto px-6 space-y-10">
-        <CategoryShowcase categories={destinationData.categories} />
+      {/* CONTENT */}
+      <div className="max-w-6xl mx-auto p-6 space-y-12">
+        {/* Best Time */}
+        <section>
+          <h2 className="text-2xl font-semibold mb-2">Best Time to Visit</h2>
+          <p className="text-gray-700">
+            <strong>{data.bestTimeToVisit?.months}</strong> —{" "}
+            {data.bestTimeToVisit?.reason}
+          </p>
+        </section>
 
-        <DestinationStats stats={destinationData.stats} />
+        {/* Attractions */}
+        <section>
+          <h2 className="text-2xl font-semibold mb-4">Top Attractions</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {data.attractions?.map((place: any, i: number) => (
+              <div
+                key={i}
+                className="border rounded-2xl p-5 shadow-sm"
+              >
+                <h3 className="font-semibold text-lg">{place.name}</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  {place.description}
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  {place.type} • {place.recommendedDuration}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
 
-        <DestinationMap coords={destinationData.mapCoords} />
+        {/* Local Cuisine */}
+        <section>
+          <h2 className="text-2xl font-semibold mb-4">Local Cuisine</h2>
+          <ul className="list-disc pl-5 space-y-2">
+            {data.localCuisine?.dishes?.map((dish: any, i: number) => (
+              <li key={i}>
+                <strong>{dish.name}</strong> — {dish.description}
+              </li>
+            ))}
+          </ul>
+        </section>
 
-        <DestinationTabs destination={destinationData} />
+        {/* Travel Tips */}
+        <section>
+          <h2 className="text-2xl font-semibold mb-4">Travel Tips</h2>
+          <ul className="list-disc pl-5 space-y-1">
+            {data.travelTips?.general?.map((tip: string, i: number) => (
+              <li key={i}>{tip}</li>
+            ))}
+          </ul>
+        </section>
       </div>
-
-      <PlanTripCTA destination={destinationData.name} />
-    </main>
+    </>
   );
 }

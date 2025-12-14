@@ -16,10 +16,12 @@ const handleSubmit=async()=>{
   if (!input.trim()) return;
   try{
     setloading(true);
-const res=axios.post("/api/explore",{
-  slug:input
-});
-console.log(res);
+        router.push(`/destination/${encodeURIComponent(input.trim())}`);
+
+// const res=axios.post("/api/explore",{
+//   slug:input
+// });
+// console.log(res);
 }catch(err){
   console.log(err);
 }
