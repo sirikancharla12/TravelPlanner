@@ -16,12 +16,9 @@ const handleSubmit=async()=>{
   if (!input.trim()) return;
   try{
     setloading(true);
-        router.push(`/destination/${encodeURIComponent(input.trim())}`);
+    router.push(`/destination/${encodeURIComponent(input)}`);
 
-// const res=axios.post("/api/explore",{
-//   slug:input
-// });
-// console.log(res);
+
 }catch(err){
   console.log(err);
 }
@@ -33,19 +30,16 @@ finally{
   return (
     <div className="text-center max-w-3xl mx-auto space-y-6">
 
-           {/* Heading */}
       <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
         Plan your perfect trip <br />
         with AI assistance
       </h1>
 
-      {/* Subtitle */}
       <p className="text-gray-600 max-w-xl mx-auto">
         Discover destinations, build smart itineraries, and explore the world
         in seconds with your personal travel assistant.
       </p>
 
-      {/* Search bar */}
       <div className="flex items-center bg-white rounded-xl shadow-lg overflow-hidden max-w-2xl mx-auto">
         <div className="px-4 text-gray-400">
           <Search size={18} />
@@ -66,7 +60,6 @@ finally{
 </button>
       </div>
 
-      {/* Popular chips */}
       <div className="flex flex-wrap justify-center gap-3 pt-2 text-sm">
         {["Beach", "Mountains", "Weekend trip", "Budget friendly"].map(
           (item) => (

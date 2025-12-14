@@ -2,10 +2,17 @@ import { geminiModel } from "@/lib/api/geminisdk";
 import { NextResponse, NextRequest } from "next/server";
 
 function extractJSON(text: string) {
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error("No JSON found in response");
-  return JSON.parse(match[0]);
+  const firstBrace = text.indexOf("{");
+  const lastBrace = text.lastIndexOf("}");
+
+  if (firstBrace === -1 || lastBrace === -1) {
+    throw new Error("No JSON object found in response");
+  }
+
+  const jsonString = text.slice(firstBrace, lastBrace + 1);
+  return JSON.parse(jsonString);
 }
+
 
 
 async function analyzeDestination(slug: string) {
