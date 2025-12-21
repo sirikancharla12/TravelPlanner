@@ -83,6 +83,34 @@ export default function Workspace() {
     }
   }, []);
 
+  useEffect(() => {
+  const pending = localStorage.getItem("pending_trip_chat");
+  if (!pending) return;
+
+  try {
+    const parsed = JSON.parse(pending);
+
+    const newChat: Chat = {
+      id: Date.now().toString(),
+      title: parsed.title || `Trip ${chats.length + 1}`,
+      messages: parsed.messages || [],
+      savedTripId: null,
+    };
+
+    const updatedChats = [newChat, ...chats];
+
+    setChats(updatedChats);
+    setActiveChatId(newChat.id);
+    setActiveSavedTripId(null);
+
+    localStorage.setItem("trip_chats", JSON.stringify(updatedChats));
+    localStorage.removeItem("pending_trip_chat"); 
+  } catch (err) {
+    console.error("Failed to load pending trip chat", err);
+  }
+}, []);
+
+
 
   useEffect(() => {
     const auth = getAuth();

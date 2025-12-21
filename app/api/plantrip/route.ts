@@ -54,11 +54,19 @@ Now generate the updated or new travel plan accordingly.
 
 
     const result = await geminiModel.generateContent(prompt);
-    const responseText = result.response.text();
+    const rawText = result.response.text();
 
-    console.log("Plan trip response:", responseText);
+const cleanJSON = rawText
+  .replace(/```json/g, "")
+  .replace(/```/g, "")
+  .trim();
 
-    return new Response(JSON.stringify({ reply: responseText }), { status: 200 });
+return new Response(
+  JSON.stringify({ reply: JSON.parse(cleanJSON) }),
+  { status: 200 }
+);
+
+ 
   } catch (err: any) {
     console.error("Plan trip error", err);
     return new Response("Error", { status: 500 });
